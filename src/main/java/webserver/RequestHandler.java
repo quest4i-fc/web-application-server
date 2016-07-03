@@ -58,7 +58,7 @@ public class RequestHandler extends Thread {
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
-	}
+	} // end of run()
 
 	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
 		try {
