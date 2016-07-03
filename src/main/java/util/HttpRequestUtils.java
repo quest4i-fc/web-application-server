@@ -46,6 +46,20 @@ public class HttpRequestUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        
+        // 마지막으로 body를 붙인다.
+        String body = null;
+        int contentLength = httpHeader.stream()
+                .filter(s -> s.startsWith("Content-Length"))
+                .mapToInt(s -> Integer.valueOf(s.split(": ")[1]))
+                .sum();
+        try {
+            body = IOUtils.readData(bfReader, contentLength);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (!body.isEmpty())
+            httpHeader.add(body);
 
         return httpHeader;
     }

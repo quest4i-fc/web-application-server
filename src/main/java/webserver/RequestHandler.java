@@ -45,17 +45,25 @@ public class RequestHandler extends Thread {
 			final DataOutputStream dos = new DataOutputStream(out);
 
 		    // 요구사항 1 - index.html 파일을 읽어 클라이언트에 응답한다.
+			// 잘 할려면 get인지 post인지도 구분해야 한다.
 		    String url = HttpRequestUtils.getUrl(httpHeader);
+		    
+		    // 요구사항 3 - 요구사항2번은 get으로 되어 있으나 요구사항3은 post로 구현한다.
+		    int contentLength = httpHeader.stream()
+		            .filter(s -> s.startsWith("Content-Length"))
+		            .mapToInt(s -> Integer.valueOf(s.split(": ")[1]))
+		            .sum();
+		    log.debug("Content-Length: {}", contentLength);
+		          
 		    
 		    // 요구사항 2 - form.html에서 /user/create 로 보내는 회원가입 폼을 처리해서 model.User에 저장한다.
 		    // form 데이터가 전달되는 /user/create URL 호출후에 다시 초기 화면으로 가도록 설정한다.
 		    if (url.startsWith("/user/create")) {
-		        int index = url.indexOf("?");
-		        String requestPath = url.substring(0, index);
-		        String queryString = url.substring(index+1);
-		        Map<String, String> params = HttpRequestUtils.parseQueryString(queryString);
+		        String requestBody = httpHeader.get(httpHeader.size()-1);
+		        Map<String, String> params = HttpRequestUtils.parseQueryString(requestBody);
 		        User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
 		        log.debug("User : {}", user);
+
 		        url = "/index.html";
 		    }
 
