@@ -1,13 +1,82 @@
 package util;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
 public class HttpRequestUtils {
+    
+    private static final Logger log = LoggerFactory.getLogger(HttpRequestUtils.class);
+    
+    public static List<String> getHttpHeaderList(final InputStream in) {
+
+        List<String> httpHeader = new ArrayList<>();
+        BufferedReader bfReader = null;
+
+        try {
+            bfReader = new BufferedReader(new InputStreamReader(in, "UTF8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        String line;
+        try {
+            line = bfReader.readLine();
+            if (line == null) {
+                return httpHeader;
+            }
+            while (!"".equals(line)) {
+                httpHeader.add(line);
+                line = bfReader.readLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        return httpHeader;
+    }
+    
+    public static String getUrl(final List<String> httpHeader) {
+        final String path = httpHeader.get(0).split(" ")[1];
+        log.debug("request path : {}", path);
+        return path;
+    }
+    
+    public static byte[] getBody(final String path) {
+        // default value;
+        byte[] body = "Hello World".getBytes();
+
+        // 요구사항 1 - index.html 파일을 읽어 클라이언트에 응답한다.
+        if (!path.equals("/")) {
+            final File requestFile = new File("./webapp" + path);
+            if (requestFile.isFile() && requestFile.canRead()) {
+                try {
+                    body = Files.readAllBytes(requestFile.toPath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        
+        return body;
+    }
+
+//    public static String getUrl()
+    
 	/**
 	 * @param queryString은 URL에서 ? 이후에 전달되는 field1=value1&field2=value2 형식임
 	 * @return
