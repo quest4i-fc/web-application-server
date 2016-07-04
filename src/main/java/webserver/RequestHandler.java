@@ -29,7 +29,8 @@ public class RequestHandler extends Thread {
 	
 	@Override
 	public void run() {
-		log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(), connection.getPort());
+		log.debug("New Client Connect! Connected IP : {}, Port : {}", 
+		        connection.getInetAddress(), connection.getPort());
 		
 		try (InputStream in = connection.getInputStream(); 
 		     OutputStream out = connection.getOutputStream()) {
@@ -38,9 +39,11 @@ public class RequestHandler extends Thread {
 		    
 		    // 요구사항 0 - HTTP헤더를 출력한다.
 		    final List<String> httpHeader = HttpRequestUtils.getHttpHeaderList(in);
+		    log.debug("-----------------------------------------------------");
 		    for (final String head : httpHeader) {
 		        log.debug("HTTP Header : {}", head);
 		    }
+		    log.debug("-----------------------------------------------------");
 		    
 			final DataOutputStream dos = new DataOutputStream(out);
 
@@ -61,21 +64,31 @@ public class RequestHandler extends Thread {
 		    if (url.startsWith("/user/create")) {
 		        String requestBody = httpHeader.get(httpHeader.size()-1);
 		        Map<String, String> params = HttpRequestUtils.parseQueryString(requestBody);
-		        User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+		        User user = new User(
+		                params.get("userId"), params.get("password"), 
+		                params.get("name"), params.get("email"));
 		        log.debug("User : {}", user);
 
-		        url = "/index.html";
+		        response302Header(dos);
 		    }
-
 		    
 			final byte[] body = HttpRequestUtils.getBody(url);
-
 			response200Header(dos, body.length);
 			responseBody(dos, body);
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
 	} // end of run()
+
+	private void response302Header(DataOutputStream dos) {
+		try {
+			dos.writeBytes("HTTP/1.1 302 Found \r\n");
+			dos.writeBytes("Location: /index.html \r\n");
+			dos.writeBytes("\r\n");
+		} catch (IOException e) {
+			log.error(e.getMessage());
+		}
+	}
 
 	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
 		try {
