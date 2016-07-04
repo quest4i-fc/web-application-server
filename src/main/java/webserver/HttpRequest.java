@@ -1,60 +1,71 @@
 package webserver;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import webserver.*;
-
 public class HttpRequest {
-    
-    private static final Logger log = LoggerFactory.getLogger(HttpRequest.class;
-    
-    final private BufferedReader br;
-    final private Map<String, String> header;
-    final private Map<String, String> parameter;
+
+    private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
+
     final private String method;
+    final private String path;
+    final private Map<String, String> headers = new HashMap();
+    final private Map<String, String> paras;
 
 
-    public HttpRequest(final InputStream in) throws IOException {
-        // 1. br
-        this.br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-        // 2. method
-        String line = br.readLine();
-        if (line == null) {
-            return;
+    public HttpRequest(final InputStream in) {
+
+        try {
+            final private BufferedReader br = 
+                    new BufferedReader(new InputStreamReader(in, "UTF-8"));
+
+            // 1. Request Line - method, path
+            String line = br.readLine();
+            if (line == null) {
+                return;
+            }
+            log.debug("request line : {}", line);
+            String[] tokens = line.split(" ");
+            this.method = tokens[0];
+            this.path = tokens[1];
+
+            // 2. header
+            while (!(line = br.readLine()).equals("")) {
+                tokens = line.split(": ");
+                headers.put(tokens[0], tokens[1]);
+            }
+
+            // 3. parameter
+            
+        } catch (IOException e) {
+            log.error(e.getMessage());
         }
-        log.debug("request line : {}", line);
-        String[] tokens = line.split(" ");
-        this.method = tokens[0];
-        // 3. header
-        
-        // 4. parameter
+
     }
 
-
-    public Object[] getMethod() {
-        return null;
+    public String getMethod() {
+        return method;
     }
-    
+
     public String getPath() {
-        return null;
+        return path;
     }
 
     public String getHeader(String headerName) {
-        return header.get(headerName);
+        return headers.get(headerName);
     }
 
     public String getParameter(String parameterName) {
-        return parameter.get(parameterName); 
+        return paras.get(parameterName);
     }
-
 
 }
