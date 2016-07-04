@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import model.User;
+import db.DataBase;
 import util.HttpRequestUtils;
 
 
@@ -63,13 +64,32 @@ public class RequestHandler extends Thread {
 		    // form 데이터가 전달되는 /user/create URL 호출후에 다시 초기 화면으로 가도록 설정한다.
 		    if (url.startsWith("/user/create")) {
 		        String requestBody = httpHeader.get(httpHeader.size()-1);
-		        Map<String, String> params = HttpRequestUtils.parseQueryString(requestBody);
+		        Map<String, String> params = 
+		                HttpRequestUtils.parseQueryString(requestBody);
 		        User user = new User(
 		                params.get("userId"), params.get("password"), 
 		                params.get("name"), params.get("email"));
+		        DataBase.addUser(user);
 		        log.debug("User : {}", user);
 
 		        response302Header(dos);
+		    } else if (url.equals("/user/login")){
+		        String requestBody = httpHeader.get(httpHeader.size()-1);
+		        Map<String, String> params = 
+		                HttpRequestUtils.parseQueryString(requestBody);
+		        log.debug("userId : {}, password : {}", 
+		                params.get("userId"), params.get("password"));
+		        User user = DataBase.getUser(params.get("userId"));
+		        if (user == null) {
+		            log.debug("User Not Found!");
+		            url = "/user/login_failed.html";
+		        } else if (user.getPassword().equals(params.get("password"))) {
+		            log.debug("login success!!");
+		            response302HeaderWithCookie(dos, "logined=true");
+		        } else {
+		            log.debug("Password Mismatch!");
+		            url = "/user/login_failed.html";
+		        }
 		    }
 		    
 			final byte[] body = HttpRequestUtils.getBody(url);
@@ -84,6 +104,17 @@ public class RequestHandler extends Thread {
 		try {
 			dos.writeBytes("HTTP/1.1 302 Found \r\n");
 			dos.writeBytes("Location: /index.html \r\n");
+			dos.writeBytes("\r\n");
+		} catch (IOException e) {
+			log.error(e.getMessage());
+		}
+	}
+	
+	private void response302HeaderWithCookie(DataOutputStream dos, String cookie) {
+		try {
+			dos.writeBytes("HTTP/1.1 302 Found \r\n");
+			dos.writeBytes("Location: /index.html \r\n");
+			dos.writeBytes("Set-Cookie: " + cookie + " \r\n");
 			dos.writeBytes("\r\n");
 		} catch (IOException e) {
 			log.error(e.getMessage());

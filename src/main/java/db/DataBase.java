@@ -18,6 +18,14 @@ public class DataBase {
         return users.get(userId);
     }
 
+    public static User getUser(String userId) {
+        return users.get(userId);
+    }
+
+    public static void setUsers(Map<String, User> users) {
+        DataBase.users = users;
+    }
+
     public static Collection<User> findAll() {
         return users.values();
     }
