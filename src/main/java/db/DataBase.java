@@ -7,6 +7,8 @@ import com.google.common.collect.Maps;
 
 import model.User;
 
+// Map 필드에 왜 Coolection 리턴 타입을 지정했을까?
+
 public class DataBase {
     private static Map<String, User> users = Maps.newHashMap();
 
