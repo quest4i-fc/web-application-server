@@ -6,9 +6,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,60 +19,58 @@ public class HttpRequest {
     private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
 
     final private RequestLine requestLine;
-    private Map<String, String> headers;
-    // parameters는 값이 없을 수도 있다. -> Optional ?
-    private Map<String, String> parameters;
+    final private Map<String, String> headers;
+    final private Map<String, String> parameters;
 
 
     public HttpRequest(final InputStream in) {
 
-        String firstLine = null;
-        
+        RequestLine _requestLine = null;;
+        Map<String, String> _headers = new HashMap<>();
+        Map<String, String> _parameters = new HashMap<>();
+
         try {
             final BufferedReader br = 
                     new BufferedReader(new InputStreamReader(in, "UTF-8"));
 
             // 1. Request Line - method, path, get-parameters
-            firstLine = br.readLine();
-            if (firstLine != null) {
-                log.debug("request line : {}", firstLine);
-                requestLine = new RequestLine(firstLine);
-                if (requestLine.getMethod() == "GET" && requestLine.getParameters() != null)
-                    this.parameters = requestLine.getParameters();
-
-                // 2. parameter
-                final List<String> allLines = br.lines()
-                        .filter(s -> !(s.equals("")))
-                        .collect(Collectors.toList());
-                if (this.requestLine.isPost()) {
-                    final String paramLine = allLines.get(allLines.size() - 1);
-                    allLines.remove(allLines.size() -1);
-                    parameters = Arrays.stream(paramLine.split("&"))
-                            .map(s -> s.split("="))
-                            .collect(Collectors.toMap(s -> s[0], s -> s[1]));
-                    if (parameters == null) {
-                        parameters = new HashMap<>();
-                    }
-                }
-                headers = allLines.stream()
-                        .map(s -> s.split(": "))
-                        .collect(Collectors.toMap(s -> s[0], s -> s[1]));
+            String str = br.readLine();
+            if (str == null) {
+                return;
             }
+            _requestLine = new RequestLine(str);
+            log.debug("request line : {}", _requestLine.toString());
+
+            Stream<String> stream = br.lines()
+                    .filter(s -> !(s.equals("")))
+                    .collect(Collectors.toList())
+                    .stream();
+
+            switch (_requestLine.getMethod()) {
+                case GET:
+                    _parameters = _requestLine.getParameters();
+                    break;
+                case POST:
+                    _parameters = Arrays
+                        .stream(stream
+                            .reduce((first, second) -> second).get().split("&"))
+                        .map(s -> s.split("="))
+                        .collect(Collectors.toMap(s -> s[0], s -> s[1]));
+                    break;
+            }
+            _headers = stream.map(s -> s.split(": "))
+                            .collect(Collectors.toMap(s -> s[0], s -> s[1]));
         } catch (IOException e) {
             log.error(e.getMessage());
-        }
-        if (firstLine == null) {
-            this();
+        } finally {
+            this.requestLine = _requestLine;
+            this.headers = _headers;
+            this.parameters = _parameters;
         }
     } // end of HttpRequest(final InputStream in)
     
-    public HttpRequest() {
-        requestLine = null;
-        headers = null;
-        parameters = null;
-    }
 
-    public String getMethod() {
+    public HttpMethod getMethod() {
         return requestLine.getMethod();
     }
 
@@ -85,12 +83,6 @@ public class HttpRequest {
     }
 
     public String getParameter(final String parameterName) {
-        String value = null;
-        if (parameters != null) {
-            if (parameters.containsKey(parameterName)) {
-                value = parameters.get(parameterName);
-            }
-        }
-        return value;
+        return parameters.get(parameterName);
     }
 }
