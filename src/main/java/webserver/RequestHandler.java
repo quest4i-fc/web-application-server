@@ -20,8 +20,6 @@ import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
 import util.IOUtils;
 import db.DataBase;
-import http.HttpRequest;
-import http.RequestLine;
 
 public class RequestHandler extends Thread {
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -33,19 +31,14 @@ public class RequestHandler extends Thread {
 	}
 
 	public void run() {
-		log.debug("New Client Connect! Connected IP : {}, Port : {}", 
-		        connection.getInetAddress(), connection.getPort());
+		log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(), connection.getPort());
 
-		try (InputStream in = connection.getInputStream(); 
-		     OutputStream out = connection.getOutputStream()) {
-
-//			BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-//			String line = br.readLine();
-//			if (line == null) {
-//				return;
-//			}
-		    HttpRequest httpRequest = new HttpRequest(in);
-		    if (httpRequest
+		try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
+			BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+			String line = br.readLine();
+			if (line == null) {
+				return;
+			}
 
 			log.debug("request line : {}", line);
 			String[] tokens = line.split(" ");
@@ -117,7 +110,7 @@ public class RequestHandler extends Thread {
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
-	} // end of run()
+	}
 
 	private boolean isLogin(String line) {
 		String[] headerTokens = line.split(":");
