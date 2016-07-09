@@ -21,7 +21,13 @@ import util.HttpRequestUtils;
 import util.IOUtils;
 import db.DataBase;
 
+
+import http.HttpRequest;
+import http.HttpMethod;
+
+
 public class RequestHandler extends Thread {
+
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
 	private Socket connection;
@@ -30,35 +36,46 @@ public class RequestHandler extends Thread {
 		this.connection = connectionSocket;
 	}
 
+	@Override
 	public void run() {
-		log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(), connection.getPort());
 
-		try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
-			BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-			String line = br.readLine();
-			if (line == null) {
-				return;
-			}
+		log.debug("New Client Connect! Connected IP : {}, Port : {}",
+		        connection.getInetAddress(), connection.getPort());
 
-			log.debug("request line : {}", line);
-			String[] tokens = line.split(" ");
+		try (InputStream in = connection.getInputStream();
+		     OutputStream out = connection.getOutputStream()) {
 
-			int contentLength = 0;
-			boolean logined = false;
-			while (!line.equals("")) {
-				line = br.readLine();
-				log.debug("header : {}", line);
-				
-				if (line.contains("Content-Length")) {
-					contentLength = getContentLength(line);
-				}
-				
-				if (line.contains("Cookie")) {
-					logined = isLogin(line);
-				}
-			}
+		    final HttpRequest REQUEST = new HttpRequest(in);
+		    if (REQUEST == null) {
+		        return;
+		    }
 
-			String url = getDefaultUrl(tokens);
+//			BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+//			String line = br.readLine();
+//			if (line == null) {
+//				return;
+//			}
+//			log.debug("request line : {}", line);
+//			String[] tokens = line.split(" ");
+
+
+//			int contentLength = 0;
+//			boolean logined = false;
+//			while (!line.equals("")) {
+//				line = br.readLine();
+//				log.debug("header : {}", line);
+//				
+//				if (line.contains("Content-Length")) {
+//					contentLength = getContentLength(line);
+//				}
+//				
+//				if (line.contains("Cookie")) {
+//					logined = isLogin(line);
+//				}
+//			}
+
+//			String url = getDefaultUrl(tokens);
+		    String url = getDefaultUrl(REQUEST.getPath());
 			if ("/user/create".equals(url)) {
 				String body = IOUtils.readData(br, contentLength);
 				Map<String, String> params = HttpRequestUtils.parseQueryString(body);
@@ -141,10 +158,10 @@ public class RequestHandler extends Thread {
 		return Integer.parseInt(headerTokens[1].trim());
 	}
 
-	private String getDefaultUrl(String[] tokens) {
-		String url = tokens[1];
-		if (url.equals("/")) {
-			url = "/index.html";
+	private String getDefaultUrl(final String path) {
+	    String url;
+		if (path.equals("/")) {
+			path = "/index.html";
 		}
 		return url;
 	}

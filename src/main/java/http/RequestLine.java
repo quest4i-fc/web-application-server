@@ -9,20 +9,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+
 // HttpRequest를 통해서 다른 헤더값이랑 똑가이 사용할 수 있도록 구현한다.
 // GET일 경우 path에서 parameter를 분리한다.
 // POST일 경우 parameter를 가지고 있지 않다.
-public class RequestLine {
+class RequestLine {
 
     private static final Logger log = LoggerFactory.getLogger(RequestLine.class);
     
     final private HttpMethod method;
     final private String path;
     final private String protocol;
-    // GET 메소드일경우 파라미터가 있으면 저장한다.
     final private Map<String, String> parameters;
-
     
+
     RequestLine(String line) {
 
         String[] tokens = line.split(" ");
@@ -38,7 +38,7 @@ public class RequestLine {
         log.debug("pathLine : {}", path);
 
         // 3. GET에 포함된 파라미터 
-        if (this.method.equals("GET") && pathLine.length > 1) {
+        if (this.method == HttpMethod.GET && pathLine.length > 1) {
             this.parameters = Arrays.stream(pathLine[1].split("&"))
                     .map(e -> e.split("="))
                     .collect(Collectors.toMap(e -> e[0],  e -> e[1]));
